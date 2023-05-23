@@ -1,0 +1,152 @@
+---
+apiVersion: apps/v1      
+kind: Deployment                          
+metadata:           
+  name: nginx-burger
+spec: 
+  selector:
+    matchLabels: 
+      app: burger 
+  template:
+    metadata:
+      labels:
+        app: burger
+    spec:                           
+      containers:
+      - name: nginx-burger
+        image: pvigynov/nginx-burger:newmenu
+        ports:
+        - containerPort: 80
+
+---
+
+apiVersion: apps/v1      
+kind: Deployment                          
+metadata:           
+  name: nginx-tacos
+spec: 
+  replicas: 3
+  selector:
+    matchLabels: 
+      app: tacos 
+  template:
+    metadata:
+      labels:
+        app: tacos
+    spec:                           
+      containers:
+      - name: nginx-tacos
+        image: pvigynov/nginx-tacos:newmenu
+        ports:
+        - containerPort: 80
+
+---
+
+apiVersion: apps/v1      
+kind: Deployment                          
+metadata:           
+  name: nginx-pizza
+spec: 
+  selector:
+    matchLabels: 
+      app: pizza 
+  template:
+    metadata:
+      labels:
+        app: pizza
+    spec:                           
+      containers:
+      - name: nginx-pizza
+        image: pvigynov/nginx-pizza:newmenu
+        ports:
+        - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: burger-service
+spec:
+  selector:
+    app: burger
+  ports:
+  - port: 8080
+    targetPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: tacos-service
+spec:
+  selector:
+    app: tacos
+  ports:
+  - port: 8081
+    targetPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pizza-service
+spec:
+  selector:
+    app: pizza
+  ports:
+  - port: 8082
+    targetPort: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: burgerandtacos-ingress
+  labels:
+    name: burgerandtacos-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - host: burgerandtacos.eatsout.com
+    http:
+      paths:
+      - path: /burger(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: burger-service
+            port:
+              number: 8080
+      - path: /tacos(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: tacos-service
+            port:
+              number: 8081
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mypizza-ingress
+  labels:
+    name: mypizza-ingress
+spec:
+  rules:
+  - host: mypizza.eatsout.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pizza-service
+            port:
+              number: 8082
+
